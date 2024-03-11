@@ -9,7 +9,7 @@ path = ''
 cancel_url =''
 headers = {   
         'Content-Type': 'application/json',
-        'Authorization': 'Token r8_Rw4lbd31DysolwMmWlgEKSA5sw1yzfT0lppJ5',
+        'Authorization': 'Token r8_ZGZlzThfRkPZVDMygVclY1XZ9AuxmIQ2qwwPP',
         "Access-Control-Allow-Headers": "Content-Type",
         "Access-Control-Allow-Origin": '**',
         "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PATCH"}
@@ -115,45 +115,16 @@ with gr.Blocks() as demo:
         with gr.Column():
             
             outputs = []
-            chain =''
-            if schema.get("Output",{}).get("type",'') == "array":
-                for item in data.get("default_example",'').get("output",[]):
-                    if schema.get("Output",{}).get("items", '').get("type",'') == "string":
-                        if  schema.get("Output",{}).get("items", '').get("format",'') == "uri":
-                            outputs.append(gr.Image(value=item))
-                        else:
-                            if schema.get("Output",{}).get('x-cog-array-display','') == "concatenate":
-                                chain = chain + item
-                                outputs=gr.Textbox(value=chain)
-                            else:
-                                outputs.append(gr.Textbox(value=item))
-            elif schema.get("Output",{}).get("type",'') == "object":
-                if schema.get("Output",{}).get("properties",'') == "media_path":
-                   outputs= gr.File()
-                    # value= data.get("default_example",'').get("output", '').get("media_path",'')
-                properties = schema.get("Output", {}).get("properties", {})
-                if isinstance(properties, dict):
-                    for key, item in properties.items():
-                            if item.get('type', '') == 'string':
-                                if item.get('format', '') == 'uri':
-                                    outputs.append(gr.Image())
-
-            else:
-                if schema.get("Output",{}).get("type",'') == "string":
-                        if  schema.get("Output",{}).get("format",'') == "uri":
-                            path=(data.get("default_example",'').get("output",''))
-                            print(path)
-                            if '.png' in path:
-                                outputs=(gr.Image(value=path))
-                            else:
-                                outputs=(gr.Image())
-                        else:
-                            outputs=(gr.Textbox(value=data.get("default_example",'').get("output",'')))
+            outputs.append(gr.Image(value='https://replicate.delivery/pbxt/sWeZFZou6v3CPKuoJbqX46ugPaHT1DcsWYx0srPmGrMOCPYIA/out-0.png'))
+            outputs.append(gr.Image())
+            outputs.append(gr.Image())
+            outputs.append(gr.Image())
+            
            
     
     def run_process(input1,input2,input3,input4,input5,input6,input7, input8, input9):
        global cancel_url
-       url = 'https://api.replicate.com/v1/predictions'
+       url = 'https://replicate.com/api/predictions'
        body = {
             "version": version,
             "input": {
@@ -173,44 +144,44 @@ with gr.Blocks() as demo:
        if response.status_code == 201:
             response_data = response.json()
             get_url = response_data.get('urls','').get('get','')
+            identifier = 'https://replicate.com/api/predictions/'+get_url.split("/")[-1]
+            
+            print(identifier,'')
             cancel_url = response_data.get('urls','').get('cancel','')
-            print(get_url)
+            print(identifier)
             time.sleep(3)
-            output =verify_image(get_url) 
-            print(output)
-            if output == '':
-                  return
-            else:
+            output =verify_image(identifier) 
+            print(output,'333')
+            if output:
                   for item in output:
-                   return  gr.Image(value=item)
+                    return  gr.Image(value=item)
+                  
+            else:
+                 return
+                  
        return gr.Image()
     
     def cancel_process(input1,input2,input3,input4,input5,input6,input7, input8, input9):
-        print(cancel_url,"cancel_url")
-        if cancel_url == '':
-          return gr.Image(value='https://replicate.delivery/pbxt/sWeZFZou6v3CPKuoJbqX46ugPaHT1DcsWYx0srPmGrMOCPYIA/out-0.png')
-         
-        else :
-           response = requests.get(cancel_url, headers=headers)
            return gr.Image(value='https://replicate.delivery/pbxt/sWeZFZou6v3CPKuoJbqX46ugPaHT1DcsWYx0srPmGrMOCPYIA/out-0.png')
+                               
       
-
     def verify_image(get_url):
-     res = requests.get(get_url, headers=headers)
-     if res.status_code == 200:
-        res_data = res.json()
-        print(res_data)
-      
-        output =  res_data.get('output', '')
-        print(output,'111')
-        if output == '':
-                time.sleep(1)
-                verify_image(get_url)
-        else:
+        res = requests.get(get_url)
+        if res.status_code == 200:
+            res_data = res.json()
+       
+            output =  res_data.get('output', [])
+            print(output,'111')
+            if output:
                 print(output,'222')
                 return output
-     else: 
-        return  ''  
+                
+            else:
+                time.sleep(1)
+                val = verify_image(get_url)
+                return val
+        else: 
+            return  []  
     
     run_btn.click(run_process, inputs=inputs, outputs=outputs, api_name="run")
     cancel_btn.click(cancel_process, inputs=inputs, outputs=outputs, api_name="cancel")
